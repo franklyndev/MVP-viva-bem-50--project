@@ -1,0 +1,10 @@
+/* Base com fonte grande e alto contraste para o público 50+. */
+:root {
+  font: 18px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  color: #18302c;
+  background: #ffffff;
+}
+
+body {
+  margin: 0;
+}
