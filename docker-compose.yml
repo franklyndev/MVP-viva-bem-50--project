@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: vivabem50-postgres
+    environment:
+      POSTGRES_DB: vivabem50
+      POSTGRES_USER: ${DB_USERNAME:-vivabem}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no arquivo .env}
+    ports:
+      # Porta 5433 no computador para não conflitar com um PostgreSQL local na 5432.
+      - "127.0.0.1:${DB_HOST_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
