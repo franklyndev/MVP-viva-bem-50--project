@@ -1,0 +1,10 @@
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Editores e sistema
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
