@@ -1,27 +1,34 @@
-import { useEffect, useState } from 'react'
-import { getHealth } from './services/api'
-import './App.css'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { useAuth } from './auth-context'
+import Login from './pages/Login'
+import Inicio from './pages/Inicio'
+import Agenda from './pages/Agenda'
+import Assistente from './pages/Assistente'
+import BemEstar from './pages/BemEstar'
+import Perfil from './pages/Perfil'
 
-function statusMessage(health, failed) {
-  if (failed) return 'Não foi possível falar com a API. Verifique se ela está rodando.'
-  if (!health) return 'Verificando a conexão...'
-  if (health.database === 'UP') return 'API e banco de dados conectados.'
-  return 'A API está no ar, mas o banco de dados não respondeu.'
+function Private({ children }) {
+  const { user } = useAuth()
+  if (!user) return <Navigate to="/" replace />
+  return children
+}
+
+function PublicOnly({ children }) {
+  const { user } = useAuth()
+  if (user) return <Navigate to="/inicio" replace />
+  return children
 }
 
 export default function App() {
-  const [health, setHealth] = useState(null)
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    getHealth().then(setHealth).catch(() => setFailed(true))
-  }, [])
-
   return (
-    <main>
-      <h1>VivaBem 50+</h1>
-      <p>Sua rotina de saúde organizada em um só lugar.</p>
-      <p role="status" className="status">{statusMessage(health, failed)}</p>
-    </main>
+    <Routes>
+      <Route path="/" element={<PublicOnly><Login /></PublicOnly>} />
+      <Route path="/inicio" element={<Private><Inicio /></Private>} />
+      <Route path="/agenda" element={<Private><Agenda /></Private>} />
+      <Route path="/assistente" element={<Private><Assistente /></Private>} />
+      <Route path="/bem-estar" element={<Private><BemEstar /></Private>} />
+      <Route path="/perfil" element={<Private><Perfil /></Private>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
