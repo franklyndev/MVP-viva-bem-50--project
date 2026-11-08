@@ -9,8 +9,12 @@ import java.util.Optional;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    List<Appointment> findByUser_IdAndStartsAtGreaterThanEqualAndStartsAtLessThanOrderByStartsAtAsc(
-            Long userId, OffsetDateTime from, OffsetDateTime to);
+    /** Busca só se o compromisso pertencer ao usuário. */
+    Optional<Appointment> findByIdAndUserId(Long id, Long userId);
 
-    Optional<Appointment> findByIdAndUser_Id(Long id, Long userId);
+    List<Appointment> findByUserIdOrderByStartsAtAsc(Long userId);
+
+    /** Intervalo [from, to): inclui o início e exclui o fim. */
+    List<Appointment> findByUserIdAndStartsAtGreaterThanEqualAndStartsAtLessThanOrderByStartsAtAsc(
+            Long userId, OffsetDateTime from, OffsetDateTime to);
 }

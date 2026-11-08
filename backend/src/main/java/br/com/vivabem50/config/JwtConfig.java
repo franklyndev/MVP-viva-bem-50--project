@@ -13,27 +13,31 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
+/** Tokens JWT assinados com HMAC-SHA256 usando a chave JWT_SECRET. */
 @Configuration
 public class JwtConfig {
 
-    @Bean
-    SecretKey jwtSecretKey(@Value("${app.jwt.secret}") String secret) {
+    private static final int MIN_SECRET_BYTES = 32;
+
+    private final SecretKey key;
+
+    public JwtConfig(@Value("${app.jwt.secret:}") String secret) {
         byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
-        if (bytes.length < 32) {
-            bytes = Arrays.copyOf(bytes, 32);
+        if (bytes.length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                    "Defina JWT_SECRET no arquivo .env com pelo menos " + MIN_SECRET_BYTES + " caracteres.");
         }
-        return new SecretKeySpec(bytes, "HmacSHA256");
+        this.key = new SecretKeySpec(bytes, "HmacSHA256");
     }
 
     @Bean
-    JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
-        return NimbusJwtDecoder.withSecretKey(jwtSecretKey).macAlgorithm(MacAlgorithm.HS256).build();
+    JwtEncoder jwtEncoder() {
+        return new NimbusJwtEncoder(new ImmutableSecret<>(key));
     }
 
     @Bean
-    JwtEncoder jwtEncoder(SecretKey jwtSecretKey) {
-        return new NimbusJwtEncoder(new ImmutableSecret<>(jwtSecretKey));
+    JwtDecoder jwtDecoder() {
+        return NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
     }
 }

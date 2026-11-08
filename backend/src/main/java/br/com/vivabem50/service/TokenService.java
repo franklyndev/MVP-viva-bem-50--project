@@ -1,5 +1,6 @@
 package br.com.vivabem50.service;
 
+import br.com.vivabem50.dto.auth.AuthResponse;
 import br.com.vivabem50.model.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -15,24 +16,26 @@ import java.time.Instant;
 @Service
 public class TokenService {
 
-    private final JwtEncoder encoder;
-    private final Duration ttl;
+    private final JwtEncoder jwtEncoder;
+    private final Duration expiration;
 
-    public TokenService(JwtEncoder encoder, @Value("${app.jwt.ttl}") Duration ttl) {
-        this.encoder = encoder;
-        this.ttl = ttl;
+    public TokenService(JwtEncoder jwtEncoder, @Value("${app.jwt.expiration:PT12H}") Duration expiration) {
+        this.jwtEncoder = jwtEncoder;
+        this.expiration = expiration;
     }
 
-    public String issue(User user) {
+    public AuthResponse issueFor(User user) {
         Instant now = Instant.now();
+        Instant expiresAt = now.plus(expiration);
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .subject(String.valueOf(user.getId()))
+                .issuer("vivabem50-api")
                 .issuedAt(now)
-                .expiresAt(now.plus(ttl))
-                .claim("email", user.getEmail())
-                .claim("name", user.getName())
+                .expiresAt(expiresAt)
+                .subject(user.getId().toString())
                 .build();
-        return encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
-                .getTokenValue();
+        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+        return new AuthResponse(token, "Bearer", expiresAt,
+                new AuthResponse.UserSummary(user.getId(), user.getName(), user.getEmail()));
     }
 }
