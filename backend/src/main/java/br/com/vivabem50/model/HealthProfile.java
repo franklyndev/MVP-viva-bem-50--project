@@ -23,6 +23,9 @@ public class HealthProfile {
     @Column(name = "activity_level", length = 20)
     private ActivityLevel activityLevel;
 
+    @Column(length = 80)
+    private String city;
+
     @Column(columnDefinition = "text")
     private String notes;
 
@@ -39,6 +42,8 @@ public class HealthProfile {
     public void setUser(User user) { this.user = user; }
     public ActivityLevel getActivityLevel() { return activityLevel; }
     public void setActivityLevel(ActivityLevel activityLevel) { this.activityLevel = activityLevel; }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
