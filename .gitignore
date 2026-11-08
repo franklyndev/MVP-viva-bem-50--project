@@ -4,6 +4,7 @@
 !.env.example
 
 # Editores e sistema
+.vscode/
 .idea/
 *.iml
 .DS_Store
