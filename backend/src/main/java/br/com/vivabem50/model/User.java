@@ -29,6 +29,9 @@ public class User {
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 
+    @Column(name = "activity_goal", nullable = false)
+    private int activityGoal = 30;
+
     @Column(name = "data_consent_at", nullable = false)
     private OffsetDateTime dataConsentAt;
 
@@ -55,6 +58,8 @@ public class User {
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public LocalDate getBirthDate() { return birthDate; }
     public void setBirthDate(LocalDate birthDate) { this.birthDate = birthDate; }
+    public int getActivityGoal() { return activityGoal; }
+    public void setActivityGoal(int activityGoal) { this.activityGoal = activityGoal; }
     public OffsetDateTime getDataConsentAt() { return dataConsentAt; }
     public void setDataConsentAt(OffsetDateTime dataConsentAt) { this.dataConsentAt = dataConsentAt; }
     public Set<Goal> getGoals() { return goals; }

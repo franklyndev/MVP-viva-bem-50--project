@@ -68,8 +68,10 @@ public class AiChatService {
                     + day.wellbeing().activityGoal() + " minutos.";
         }
         if (contains(message, "água", "copo", "hidrata")) {
-            return "Hoje você está com " + day.wellbeing().waterCups() + " de " + day.wellbeing().waterGoal()
-                    + " copos. Um copo agora já ajuda.";
+            String consumed = day.wellbeing().waterLiters().stripTrailingZeros().toPlainString().replace('.', ',');
+            String goal = day.wellbeing().waterGoalLiters().stripTrailingZeros().toPlainString().replace('.', ',');
+            return "Hoje você está com " + consumed + " de " + goal
+                    + " litros de água. Um pouco de água agora já ajuda.";
         }
         if (day.items().isEmpty()) {
             return "Olá, " + firstName + "! Sua agenda de hoje está livre. Posso ajudar a marcar uma caminhada ou uma consulta.";

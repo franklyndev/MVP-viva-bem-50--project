@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
@@ -23,8 +24,8 @@ public class WellbeingLog {
     @Column(name = "logged_on", nullable = false)
     private LocalDate loggedOn;
 
-    @Column(name = "water_cups", nullable = false)
-    private int waterCups;
+    @Column(name = "water_liters", nullable = false, precision = 5, scale = 2)
+    private BigDecimal waterLiters = BigDecimal.ZERO;
 
     @Column(name = "activity_minutes", nullable = false)
     private int activityMinutes;
@@ -46,8 +47,8 @@ public class WellbeingLog {
     public void setUser(User user) { this.user = user; }
     public LocalDate getLoggedOn() { return loggedOn; }
     public void setLoggedOn(LocalDate loggedOn) { this.loggedOn = loggedOn; }
-    public int getWaterCups() { return waterCups; }
-    public void setWaterCups(int waterCups) { this.waterCups = waterCups; }
+    public BigDecimal getWaterLiters() { return waterLiters; }
+    public void setWaterLiters(BigDecimal waterLiters) { this.waterLiters = waterLiters; }
     public int getActivityMinutes() { return activityMinutes; }
     public void setActivityMinutes(int activityMinutes) { this.activityMinutes = activityMinutes; }
     public Mood getMood() { return mood; }

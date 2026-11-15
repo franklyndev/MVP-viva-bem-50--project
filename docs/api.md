@@ -224,7 +224,7 @@ Na URL, o `+` de fusos positivos precisa ser codificado como `%2B`; fusos negati
   "date": "2026-11-20",
   "user": { "id": 1, "name": "Maria Souza", "email": "maria@vivabem50.com", "birthDate": "1964-03-15", "age": 62, "city": "Aracaju" },
   "nextAppointment": { "id": "APPOINTMENT:3", "source": "APPOINTMENT", "sourceId": 3, "time": "15:00", "title": "Consulta – Dra. Helena", "kind": "Consulta", "detail": "Clínica Vida · Cardiologista", "done": false },
-  "wellbeing": { "date": "2026-11-20", "waterCups": 4, "waterGoal": 8, "activityMinutes": 20, "activityGoal": 30, "mood": null },
+  "wellbeing": { "date": "2026-11-20", "waterLiters": 1.00, "waterGoalLiters": 2.00, "activityMinutes": 20, "activityGoal": 30, "mood": null },
   "items": [
     { "id": "ACTIVITY:5", "source": "ACTIVITY", "sourceId": 5, "time": "09:30", "title": "Caminhada no parque", "kind": "Atividade", "detail": "Caminhada, 30 minutos", "done": false }
   ]
@@ -252,7 +252,7 @@ Um compromisso feito passa a ter status `REALIZADO`. Responde `204`; item de out
 `date` é opcional. Sem registro no dia, os valores vêm zerados.
 
 ```json
-{ "date": "2026-11-20", "waterCups": 4, "waterGoal": 8, "activityMinutes": 20, "activityGoal": 30, "mood": "BEM" }
+{ "date": "2026-11-20", "waterLiters": 1.00, "waterGoalLiters": 2.00, "activityMinutes": 20, "activityGoal": 30, "mood": "BEM" }
 ```
 
 ### `PUT /api/wellbeing`
@@ -260,14 +260,17 @@ Um compromisso feito passa a ter status `REALIZADO`. Responde `204`; item de out
 Só os campos enviados mudam. `date` é obrigatório.
 
 ```json
-{ "date": "2026-11-20", "waterCups": 5, "mood": "OTIMO" }
+{ "date": "2026-11-20", "waterLiters": 1.25, "activityGoal": 45, "mood": "OTIMO" }
 ```
 
 | Campo | Regra |
 |---|---|
-| `waterCups` | De 0 a 30 |
+| `waterLiters` | De 0 a 20 litros, com até duas casas decimais |
 | `activityMinutes` | De 0 a 600 |
+| `activityGoal` | De 1 a 600 minutos; a meta fica salva para os próximos dias do usuário |
 | `mood` | `OTIMO`, `BEM`, `NORMAL` ou `TRISTE` |
+
+As respostas incluem `waterLiters` e `waterGoalLiters`. Os campos `waterCups` e `waterGoal` ainda são enviados temporariamente para compatibilidade com clientes antigos.
 
 ## Assistente
 
