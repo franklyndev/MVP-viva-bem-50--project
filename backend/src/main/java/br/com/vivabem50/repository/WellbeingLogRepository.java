@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface WellbeingLogRepository extends JpaRepository<WellbeingLog, Long> {
 
-    Optional<WellbeingLog> findByUser_IdAndLoggedOn(Long userId, LocalDate loggedOn);
+    Optional<WellbeingLog> findByUserIdAndLoggedOn(Long userId, LocalDate loggedOn);
 }

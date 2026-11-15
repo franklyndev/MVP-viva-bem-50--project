@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface ActivityRecordRepository extends JpaRepository<ActivityRecord, Long> {
 
-    Optional<ActivityRecord> findByActivity_IdAndPerformedOn(Long activityId, LocalDate performedOn);
+    Optional<ActivityRecord> findByActivityIdAndPerformedOn(Long activityId, LocalDate performedOn);
 
-    List<ActivityRecord> findByActivity_IdInAndPerformedOn(Collection<Long> activityIds, LocalDate performedOn);
+    List<ActivityRecord> findByActivityIdInAndPerformedOn(Collection<Long> activityIds, LocalDate performedOn);
 }

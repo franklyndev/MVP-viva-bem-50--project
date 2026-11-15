@@ -15,10 +15,10 @@ import br.com.vivabem50.repository.HealthProfileRepository;
 import br.com.vivabem50.repository.UserRepository;
 import br.com.vivabem50.repository.WellbeingLogRepository;
 import br.com.vivabem50.service.AgendaService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,48 +27,48 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.Locale;
 
+/**
+ * Cria a usuária de demonstração "Maria Souza" com uma rotina pronta.
+ * Só roda com DEMO_DATA_ENABLED=true; use apenas em desenvolvimento e na apresentação.
+ */
 @Component
 @ConditionalOnProperty(prefix = "app.demo", name = "enabled", havingValue = "true")
 public class DemoDataLoader implements ApplicationRunner {
 
-    private final UserRepository users;
-    private final HealthProfileRepository healthProfiles;
-    private final ActivityRepository activities;
-    private final AppointmentRepository appointments;
-    private final WellbeingLogRepository wellbeingLogs;
+    private final UserRepository userRepository;
+    private final HealthProfileRepository healthProfileRepository;
+    private final ActivityRepository activityRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final WellbeingLogRepository wellbeingLogRepository;
     private final PasswordEncoder passwordEncoder;
     private final ZoneId zoneId;
     private final String demoEmail;
     private final String demoPassword;
 
-    public DemoDataLoader(
-            UserRepository users,
-            HealthProfileRepository healthProfiles,
-            ActivityRepository activities,
-            AppointmentRepository appointments,
-            WellbeingLogRepository wellbeingLogs,
-            PasswordEncoder passwordEncoder,
-            @Value("${app.timezone}") String timezone,
-            @Value("${app.demo.email}") String demoEmail,
-            @Value("${app.demo.password}") String demoPassword
-    ) {
-        this.users = users;
-        this.healthProfiles = healthProfiles;
-        this.activities = activities;
-        this.appointments = appointments;
-        this.wellbeingLogs = wellbeingLogs;
+    public DemoDataLoader(UserRepository userRepository, HealthProfileRepository healthProfileRepository,
+                          ActivityRepository activityRepository, AppointmentRepository appointmentRepository,
+                          WellbeingLogRepository wellbeingLogRepository, PasswordEncoder passwordEncoder,
+                          @Value("${app.timezone:America/Maceio}") String timezone,
+                          @Value("${app.demo.email}") String demoEmail,
+                          @Value("${app.demo.password}") String demoPassword) {
+        this.userRepository = userRepository;
+        this.healthProfileRepository = healthProfileRepository;
+        this.activityRepository = activityRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.wellbeingLogRepository = wellbeingLogRepository;
         this.passwordEncoder = passwordEncoder;
         this.zoneId = ZoneId.of(timezone);
-        this.demoEmail = demoEmail;
+        this.demoEmail = demoEmail.trim().toLowerCase(Locale.ROOT);
         this.demoPassword = demoPassword;
     }
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        User user = users.findByEmailIgnoreCase(demoEmail).orElseGet(this::createMaria);
-        if (!activities.existsByUser_Id(user.getId())) {
+        User user = userRepository.findByEmailIgnoreCase(demoEmail).orElseGet(this::createMaria);
+        if (!activityRepository.existsByUserId(user.getId())) {
             seedRoutine(user);
         }
     }
@@ -80,13 +80,13 @@ public class DemoDataLoader implements ApplicationRunner {
         user.setPasswordHash(passwordEncoder.encode(demoPassword));
         user.setBirthDate(LocalDate.of(1964, 3, 15));
         user.setDataConsentAt(OffsetDateTime.now());
-        users.save(user);
+        userRepository.save(user);
 
         HealthProfile profile = new HealthProfile();
         profile.setUser(user);
-        profile.setCity("Fortaleza");
+        profile.setCity("Aracaju");
         profile.setActivityLevel(ActivityLevel.LEVE);
-        healthProfiles.save(profile);
+        healthProfileRepository.save(profile);
         return user;
     }
 
@@ -100,7 +100,7 @@ public class DemoDataLoader implements ApplicationRunner {
             walk.setTimeOfDay(LocalTime.of(9, 30));
             walk.setDurationMinutes(30);
             walk.setActive(true);
-            activities.save(walk);
+            activityRepository.save(walk);
         }
 
         LocalDate today = LocalDate.now(zoneId);
@@ -116,17 +116,11 @@ public class DemoDataLoader implements ApplicationRunner {
         log.setLoggedOn(today);
         log.setWaterCups(4);
         log.setActivityMinutes(20);
-        wellbeingLogs.save(log);
+        wellbeingLogRepository.save(log);
     }
 
-    private void saveAppointment(
-            User user,
-            AppointmentType type,
-            String title,
-            String location,
-            String notes,
-            OffsetDateTime startsAt
-    ) {
+    private void saveAppointment(User user, AppointmentType type, String title, String location, String notes,
+                                 OffsetDateTime startsAt) {
         Appointment appointment = new Appointment();
         appointment.setUser(user);
         appointment.setType(type);
@@ -135,6 +129,6 @@ public class DemoDataLoader implements ApplicationRunner {
         appointment.setNotes(notes);
         appointment.setStartsAt(startsAt);
         appointment.setStatus(AppointmentStatus.AGENDADO);
-        appointments.save(appointment);
+        appointmentRepository.save(appointment);
     }
 }

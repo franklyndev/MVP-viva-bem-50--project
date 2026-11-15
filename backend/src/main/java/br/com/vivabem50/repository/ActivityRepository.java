@@ -8,9 +8,10 @@ import java.util.Optional;
 
 public interface ActivityRepository extends JpaRepository<Activity, Long> {
 
-    List<Activity> findByUser_IdAndDayOfWeekAndActiveTrueOrderByTimeOfDayAsc(Long userId, Short dayOfWeek);
+    List<Activity> findByUserIdAndDayOfWeekAndActiveTrueOrderByTimeOfDayAsc(Long userId, Short dayOfWeek);
 
-    Optional<Activity> findByIdAndUser_Id(Long id, Long userId);
+    /** Busca só se a atividade pertencer ao usuário. */
+    Optional<Activity> findByIdAndUserId(Long id, Long userId);
 
-    boolean existsByUser_Id(Long userId);
+    boolean existsByUserId(Long userId);
 }
