@@ -17,10 +17,13 @@ import java.time.Instant;
 public class TokenService {
 
     private final JwtEncoder jwtEncoder;
+    private final UserMapper userMapper;
     private final Duration expiration;
 
-    public TokenService(JwtEncoder jwtEncoder, @Value("${app.jwt.expiration:PT12H}") Duration expiration) {
+    public TokenService(JwtEncoder jwtEncoder, UserMapper userMapper,
+                        @Value("${app.jwt.expiration:PT12H}") Duration expiration) {
         this.jwtEncoder = jwtEncoder;
+        this.userMapper = userMapper;
         this.expiration = expiration;
     }
 
@@ -35,7 +38,6 @@ public class TokenService {
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
-        return new AuthResponse(token, "Bearer", expiresAt,
-                new AuthResponse.UserSummary(user.getId(), user.getName(), user.getEmail()));
+        return new AuthResponse(token, "Bearer", expiresAt, userMapper.toResponse(user));
     }
 }

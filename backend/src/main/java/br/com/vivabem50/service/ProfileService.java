@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,12 +30,14 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final HealthProfileRepository healthProfileRepository;
     private final GoalRepository goalRepository;
+    private final UserMapper userMapper;
 
     public ProfileService(UserRepository userRepository, HealthProfileRepository healthProfileRepository,
-                          GoalRepository goalRepository) {
+                          GoalRepository goalRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.healthProfileRepository = healthProfileRepository;
         this.goalRepository = goalRepository;
+        this.userMapper = userMapper;
     }
 
     @Transactional(readOnly = true)
@@ -96,10 +99,13 @@ public class ProfileService {
                 .sorted(Comparator.comparing(Goal::getId))
                 .map(goal -> new GoalResponse(goal.getCode(), goal.getLabel()))
                 .toList();
-        HealthProfileResponse health = healthProfileRepository.findByUserId(user.getId())
-                .map(profile -> new HealthProfileResponse(profile.getActivityLevel(), profile.getNotes()))
+        Optional<HealthProfile> profile = healthProfileRepository.findByUserId(user.getId());
+        HealthProfileResponse health = profile
+                .filter(found -> found.getActivityLevel() != null || found.getNotes() != null)
+                .map(found -> new HealthProfileResponse(found.getActivityLevel(), found.getNotes()))
                 .orElse(null);
+        String city = profile.map(HealthProfile::getCity).orElse(null);
         return new ProfileResponse(user.getId(), user.getName(), user.getEmail(), user.getBirthDate(),
-                BirthDates.age(user.getBirthDate()), goals, health);
+                userMapper.age(user.getBirthDate()), city, goals, health);
     }
 }

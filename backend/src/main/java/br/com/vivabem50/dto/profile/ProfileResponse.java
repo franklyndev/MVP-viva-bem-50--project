@@ -3,13 +3,14 @@ package br.com.vivabem50.dto.profile;
 import java.time.LocalDate;
 import java.util.List;
 
-/** healthProfile é null enquanto o usuário não preencher o perfil de saúde. */
+/** city e healthProfile podem ser null enquanto o usuário não preencher esses dados. */
 public record ProfileResponse(
         Long id,
         String name,
         String email,
         LocalDate birthDate,
         int age,
+        String city,
         List<GoalResponse> goals,
         HealthProfileResponse healthProfile
 ) {

@@ -1,5 +1,6 @@
 package br.com.vivabem50.dto.auth;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -27,8 +28,13 @@ public record RegisterRequest(
         @Past(message = "A data de nascimento deve estar no passado.")
         LocalDate birthDate,
 
+        /* O front envia "consent"; os dois nomes são aceitos. */
+        @JsonAlias("consent")
         @NotNull(message = "É preciso aceitar o uso dos dados para criar a conta.")
         @AssertTrue(message = "É preciso aceitar o uso dos dados para criar a conta.")
-        Boolean dataConsent
+        Boolean dataConsent,
+
+        @Size(max = 80, message = "A cidade pode ter no máximo 80 caracteres.")
+        String city
 ) {
 }

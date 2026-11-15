@@ -5,7 +5,9 @@ import br.com.vivabem50.dto.auth.LoginRequest;
 import br.com.vivabem50.dto.auth.RegisterRequest;
 import br.com.vivabem50.exception.ConflictException;
 import br.com.vivabem50.exception.InvalidCredentialsException;
+import br.com.vivabem50.model.HealthProfile;
 import br.com.vivabem50.model.User;
+import br.com.vivabem50.repository.HealthProfileRepository;
 import br.com.vivabem50.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,11 +20,14 @@ import java.util.Locale;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final HealthProfileRepository healthProfileRepository;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, TokenService tokenService) {
+    public AuthService(UserRepository userRepository, HealthProfileRepository healthProfileRepository,
+                       PasswordEncoder passwordEncoder, TokenService tokenService) {
         this.userRepository = userRepository;
+        this.healthProfileRepository = healthProfileRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
     }
@@ -42,6 +47,13 @@ public class AuthService {
         user.setBirthDate(request.birthDate());
         user.setDataConsentAt(OffsetDateTime.now());
         userRepository.save(user);
+
+        if (request.city() != null && !request.city().isBlank()) {
+            HealthProfile profile = new HealthProfile();
+            profile.setUser(user);
+            profile.setCity(request.city().trim());
+            healthProfileRepository.save(profile);
+        }
 
         return tokenService.issueFor(user);
     }
