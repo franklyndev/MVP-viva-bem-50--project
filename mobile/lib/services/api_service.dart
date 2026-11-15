@@ -94,6 +94,10 @@ class ApiService {
     return _json('POST', '/api/appointments', payload: payload);
   }
 
+  Future<void> deleteAppointment(int id) async {
+    await _json('DELETE', '/api/appointments/$id');
+  }
+
   Future<Map<String, dynamic>> wellbeing([String? date]) {
     final query = date == null ? '' : '?date=$date';
     return _json('GET', '/api/wellbeing$query');
@@ -141,6 +145,11 @@ class ApiService {
         case 'PUT':
           response = await _client
               .put(uri, headers: headers, body: jsonEncode(payload))
+              .timeout(const Duration(seconds: 15));
+          break;
+        case 'DELETE':
+          response = await _client
+              .delete(uri, headers: headers)
               .timeout(const Duration(seconds: 15));
           break;
         default:

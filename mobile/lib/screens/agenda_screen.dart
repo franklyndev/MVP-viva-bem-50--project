@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../theme.dart';
+import '../widgets/confirm_delete.dart';
 
 class AgendaScreen extends StatefulWidget {
   const AgendaScreen({super.key, required this.api});
@@ -59,6 +60,20 @@ class _AgendaScreenState extends State<AgendaScreen> {
   List<DateTime> get week {
     final start = selected.subtract(Duration(days: selected.weekday % 7));
     return List.generate(7, (i) => start.add(Duration(days: i)));
+  }
+
+  Future<void> remove(Map<String, dynamic> item) async {
+    if (saving) return;
+    if (!await confirmDelete(context, item['title'] as String)) return;
+    setState(() => saving = true);
+    try {
+      await widget.api.deleteAppointment((item['sourceId'] as num).toInt());
+      await load();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
   }
 
   Future<void> add() async {
@@ -129,6 +144,15 @@ class _AgendaScreenState extends State<AgendaScreen> {
                 leading: Text(item['time'] as String, style: const TextStyle(color: vivaTeal, fontWeight: FontWeight.w800)),
                 title: Text(item['title'] as String),
                 subtitle: Text('${item['kind']} · ${item['detail'] ?? ''}'),
+                trailing: item['source'] == 'APPOINTMENT'
+                    ? IconButton(
+                        tooltip: 'Excluir',
+                        iconSize: 28,
+                        color: vivaDanger,
+                        onPressed: saving ? null : () => remove(item),
+                        icon: const Icon(Icons.delete_outline),
+                      )
+                    : null,
               ),
             )),
         const SizedBox(height: 16),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../theme.dart';
+import '../widgets/confirm_delete.dart';
 import 'bem_estar_screen.dart';
 
 class InicioScreen extends StatefulWidget {
@@ -105,6 +106,27 @@ class _InicioScreenState extends State<InicioScreen> {
     }
   }
 
+  Future<void> remove(Map<String, dynamic> item) async {
+    if (saving) return;
+    if (!await confirmDelete(context, item['title'] as String)) return;
+    setState(() {
+      saving = true;
+      error = null;
+    });
+    try {
+      await widget.api.deleteAppointment((item['sourceId'] as num).toInt());
+      await load();
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  bool hasAppointment(Map<String, dynamic>? agenda) =>
+      ((agenda?['items'] as List?) ?? [])
+          .any((item) => item['source'] == 'APPOINTMENT');
+
   String greeting() {
     final h = DateTime.now().hour;
     if (h < 12) return 'Bom dia';
@@ -140,9 +162,11 @@ class _InicioScreenState extends State<InicioScreen> {
     final first = (user['name'] as String).split(' ').first;
     final today = DateTime.now();
     final timelineDates = List.generate(
-        7,
-        (index) => DateTime(today.year, today.month, today.day)
-            .subtract(Duration(days: index)));
+            7,
+            (index) => DateTime(today.year, today.month, today.day)
+                .subtract(Duration(days: index)))
+        .where((day) => hasAppointment(agendasByDay[iso(day)]))
+        .toList();
 
     return RefreshIndicator(
       onRefresh: load,
@@ -206,32 +230,27 @@ class _InicioScreenState extends State<InicioScreen> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           const Text('Acompanhe seus compromissos e atividades dia a dia.'),
           const SizedBox(height: 8),
+          if (timelineDates.isEmpty)
+            const Card(
+              child: ListTile(
+                  title: Text('Nenhum lembrete ou consulta nos últimos 7 dias.')),
+            ),
           ...timelineDates.map((day) {
             final date = iso(day);
-            final dayAgenda = agendasByDay[date];
-            final dayItems =
-                (dayAgenda?['items'] as List?)?.cast<Map<String, dynamic>>() ??
-                    [];
+            final dayItems = (agendasByDay[date]!['items'] as List)
+                .cast<Map<String, dynamic>>();
             return Card(
               clipBehavior: Clip.antiAlias,
               child: ExpansionTile(
-                initiallyExpanded: date == iso(today),
+                initiallyExpanded: day == timelineDates.first,
                 leading: Icon(Icons.event_note,
                     color: date == iso(today) ? vivaTeal : Colors.black54),
                 title: Text(dayLabel(day, today),
                     style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text(dayItems.isEmpty
-                    ? 'Nenhum compromisso ou atividade'
-                    : '${dayItems.length} ${dayItems.length == 1 ? 'item' : 'itens'}'),
+                subtitle: Text(
+                    '${dayItems.length} ${dayItems.length == 1 ? 'item' : 'itens'}'),
                 children: [
-                  if (dayAgenda == null)
-                    const ListTile(
-                        title: Text('Não foi possível carregar este dia.'))
-                  else if (dayItems.isEmpty)
-                    const ListTile(
-                        title: Text('Nada programado para este dia.'))
-                  else
-                    ...dayItems.map((item) {
+                  ...dayItems.map((item) {
                       final done = item['done'] == true;
                       final detail = (item['detail'] as String?) ?? '';
                       return ListTile(
@@ -245,21 +264,35 @@ class _InicioScreenState extends State<InicioScreen> {
                         subtitle: Text(detail.isEmpty
                             ? item['kind'] as String
                             : '${item['kind']} · $detail'),
-                        trailing: FilledButton(
-                          style: FilledButton.styleFrom(
-                              backgroundColor:
-                                  done ? vivaSuccess : Colors.white,
-                              foregroundColor:
-                                  done ? Colors.white : vivaSuccess,
-                              side: const BorderSide(
-                                  color: vivaSuccess, width: 2)),
-                          onPressed:
-                              saving ? null : () => toggle(item, done, date),
-                          child: Text(saving
-                              ? 'Salvando…'
-                              : done
-                                  ? 'Feito'
-                                  : 'Concluir'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FilledButton(
+                              style: FilledButton.styleFrom(
+                                  backgroundColor:
+                                      done ? vivaSuccess : Colors.white,
+                                  foregroundColor:
+                                      done ? Colors.white : vivaSuccess,
+                                  side: const BorderSide(
+                                      color: vivaSuccess, width: 2)),
+                              onPressed: saving
+                                  ? null
+                                  : () => toggle(item, done, date),
+                              child: Text(saving
+                                  ? 'Salvando…'
+                                  : done
+                                      ? 'Feito'
+                                      : 'Concluir'),
+                            ),
+                            if (item['source'] == 'APPOINTMENT')
+                              IconButton(
+                                tooltip: 'Excluir',
+                                iconSize: 28,
+                                color: vivaDanger,
+                                onPressed: saving ? null : () => remove(item),
+                                icon: const Icon(Icons.delete_outline),
+                              ),
+                          ],
                         ),
                       );
                     }),

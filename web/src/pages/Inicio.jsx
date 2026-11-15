@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, ChevronRight, Droplet, Footprints, Pill, Stethoscope, Utensils } from 'lucide-react'
+import { Check, ChevronRight, Droplet, Footprints, Pill, Stethoscope, Trash2, Utensils } from 'lucide-react'
 import { AppShell } from '../components/AppShell'
-import { completeItem, getAgenda } from '../services/api'
+import { completeItem, deleteAppointment, getAgenda } from '../services/api'
 
 const icons = {
   Lembrete: Pill,
@@ -44,6 +44,10 @@ function dateLabel(date, today) {
   yesterday.setDate(yesterday.getDate() - 1)
   if (date === isoDate(yesterday)) return `Ontem · ${new Date(`${date}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
   return new Date(`${date}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
+}
+
+function hasAppointment(agenda) {
+  return agenda?.items.some((item) => item.source === 'APPOINTMENT') ?? false
 }
 
 function formatLiters(value) {
@@ -98,6 +102,21 @@ export default function Inicio() {
     }
   }
 
+  async function remove(item) {
+    if (saving) return
+    if (!window.confirm(`Excluir "${item.title}"? Essa ação não pode ser desfeita.`)) return
+    setSaving(true)
+    setError('')
+    try {
+      await deleteAppointment(item.sourceId)
+      await load()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading && !data) return <AppShell title="Início"><p>Carregando sua rotina…</p></AppShell>
   if (!data) return (
     <AppShell title="Início">
@@ -110,6 +129,7 @@ export default function Inicio() {
   const next = data.nextAppointment
   const dates = recentDates()
   const today = dates[0]
+  const daysWithAppointments = dates.filter((date) => hasAppointment(agendasByDate[date]))
 
   return (
     <AppShell title="Início">
@@ -134,20 +154,17 @@ export default function Inicio() {
       <h2 style={{ marginTop: 28 }}>Linha do tempo</h2>
       <p className="muted">Acompanhe seus compromissos e atividades dia a dia.</p>
       <div style={{ marginTop: 12, display: 'grid', gap: 12 }}>
-        {dates.map((date, index) => {
-          const agenda = agendasByDate[date]
-          const items = agenda?.items ?? []
+        {daysWithAppointments.length === 0 && (
+          <p className="card muted" style={{ padding: 16 }}>Nenhum lembrete ou consulta nos últimos 7 dias.</p>
+        )}
+        {daysWithAppointments.map((date, index) => {
+          const items = agendasByDate[date].items
           return (
             <details key={date} className="card timeline-day" open={index === 0}>
               <summary>
                 <span>{dateLabel(date, today)}</span>
-                <span className="muted">{items.length ? `${items.length} ${items.length === 1 ? 'item' : 'itens'}` : 'Nenhum compromisso ou atividade'}</span>
+                <span className="muted">{items.length} {items.length === 1 ? 'item' : 'itens'}</span>
               </summary>
-              {agenda == null ? (
-                <p className="muted" style={{ padding: '0 16px 16px' }}>Não foi possível carregar este dia.</p>
-              ) : items.length === 0 ? (
-                <p className="muted" style={{ padding: '0 16px 16px' }}>Nada programado para este dia.</p>
-              ) : (
                 <ol className="timeline">
                   {items.map((item) => {
                     const Icon = icons[item.kind] ?? Footprints
@@ -159,14 +176,20 @@ export default function Inicio() {
                           <p className="item-title">{item.title}</p>
                           <p className="muted">{item.detail}</p>
                         </div>
-                        <button type="button" className={`done-btn ${item.done ? 'on' : ''}`} aria-pressed={item.done} disabled={saving} onClick={() => toggle(item, date)}>
-                          <Check size={24} aria-hidden /><span>{saving ? 'Salvando…' : item.done ? 'Feito' : 'Concluir'}</span>
-                        </button>
+                        <div className="item-actions">
+                          <button type="button" className={`done-btn ${item.done ? 'on' : ''}`} aria-pressed={item.done} disabled={saving} onClick={() => toggle(item, date)}>
+                            <Check size={24} aria-hidden /><span>{saving ? 'Salvando…' : item.done ? 'Feito' : 'Concluir'}</span>
+                          </button>
+                          {item.source === 'APPOINTMENT' && (
+                            <button type="button" className="delete-btn" disabled={saving} onClick={() => remove(item)} aria-label={`Excluir ${item.title}`}>
+                              <Trash2 size={22} aria-hidden /><span>Excluir</span>
+                            </button>
+                          )}
+                        </div>
                       </li>
                     )
                   })}
                 </ol>
-              )}
             </details>
           )
         })}

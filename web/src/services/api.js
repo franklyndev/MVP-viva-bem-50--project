@@ -87,6 +87,10 @@ export function createAppointment(payload) {
   return request('/api/appointments', { method: 'POST', body: JSON.stringify(payload) })
 }
 
+export function deleteAppointment(id) {
+  return request(`/api/appointments/${id}`, { method: 'DELETE' })
+}
+
 export function getWellbeing(date) {
   const query = date ? `?date=${encodeURIComponent(date)}` : ''
   return request(`/api/wellbeing${query}`)

@@ -254,7 +254,26 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer;
 }
 
-.done-btn:disabled, .chip:disabled, .step:disabled, .mood:disabled,
+.item-actions { display: grid; gap: 8px; }
+
+.delete-btn {
+  display: inline-flex;
+  min-width: 56px;
+  min-height: 56px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 12px;
+  border: 2px solid var(--destructive);
+  background: transparent;
+  color: var(--destructive);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.delete-btn:disabled, .done-btn:disabled, .chip:disabled, .step:disabled, .mood:disabled,
 .composer button:disabled, .mic:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -396,7 +415,7 @@ a { color: inherit; text-decoration: none; }
   .page { padding: 20px 16px; }
   .item { align-items: flex-start; gap: 10px; }
   .time { width: 48px; font-size: 1rem; }
-  .done-btn { min-width: 52px; padding: 4px; }
+  .done-btn, .delete-btn { min-width: 52px; padding: 4px; }
   .composer button { padding: 0 12px; }
   .week { gap: 4px; }
   .day-btn { min-width: 0; }

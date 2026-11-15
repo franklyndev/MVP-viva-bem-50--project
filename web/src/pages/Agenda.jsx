@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { AppShell, BigButton } from '../components/AppShell'
-import { createAppointment, getAgenda } from '../services/api'
+import { createAppointment, deleteAppointment, getAgenda } from '../services/api'
 
 const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -55,6 +55,21 @@ export default function Agenda() {
     return () => { active = false }
   }, [selectedDate])
 
+  async function remove(item) {
+    if (saving) return
+    if (!window.confirm(`Excluir "${item.title}"? Essa ação não pode ser desfeita.`)) return
+    setError('')
+    setSaving(true)
+    try {
+      await deleteAppointment(item.sourceId)
+      await load(selectedDate)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function add(event) {
     event.preventDefault()
     if (saving) return
@@ -106,10 +121,15 @@ export default function Agenda() {
             {data.items.map((item) => (
               <li key={item.id} className="card item">
                 <span className="time" style={{ color: 'var(--primary)' }}>{item.time}</span>
-                <div style={{ minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <p className="item-title">{item.title}</p>
                   <p className="muted">{item.kind}{item.detail ? ` · ${item.detail}` : ''}</p>
                 </div>
+                {item.source === 'APPOINTMENT' && (
+                  <button type="button" className="delete-btn" disabled={saving} onClick={() => remove(item)} aria-label={`Excluir ${item.title}`}>
+                    <Trash2 size={22} aria-hidden /><span>Excluir</span>
+                  </button>
+                )}
               </li>
             ))}
           </ul>
