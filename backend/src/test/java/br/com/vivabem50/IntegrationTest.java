@@ -18,13 +18,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Base dos testes de integração: sobe a aplicação inteira com um PostgreSQL descartável (Testcontainers).
  * Sem Docker aberto, os testes são ignorados.
  */
-@SpringBootTest(properties = "app.jwt.secret=chave-usada-apenas-nos-testes-automatizados-0123456789")
+@SpringBootTest(properties = {
+        "app.jwt.secret=chave-usada-apenas-nos-testes-automatizados-0123456789",
+        "app.demo.enabled=true",
+        "app.demo.email=" + IntegrationTest.DEMO_EMAIL,
+        "app.demo.password=" + IntegrationTest.DEMO_PASSWORD
+})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 @Testcontainers(disabledWithoutDocker = true)
 public abstract class IntegrationTest {
 
     protected static final String PASSWORD = "senha-segura-123";
+    protected static final String DEMO_EMAIL = "maria@vivabem50.com";
+    protected static final String DEMO_PASSWORD = "senha-demo-dos-testes";
 
     @Autowired
     protected MockMvc mockMvc;
