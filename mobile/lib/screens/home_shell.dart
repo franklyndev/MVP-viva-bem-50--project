@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../services/api_service.dart';
 import '../theme.dart';
 import 'agenda_screen.dart';
 import 'assistente_screen.dart';
+import 'emergency_contacts_screen.dart';
 import 'inicio_screen.dart';
 import 'perfil_screen.dart';
 
@@ -30,13 +29,18 @@ class _HomeShellState extends State<HomeShell> {
     ];
     return Scaffold(
       appBar: AppBar(
-        title: const Text('VivaBem 50+', style: TextStyle(fontWeight: FontWeight.w800)),
+        title: const Text('VivaBem 50+',
+            style: TextStyle(fontWeight: FontWeight.w800)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: vivaDanger, foregroundColor: Colors.white),
-              onPressed: () => launchUrl(Uri.parse('tel:192')),
+              style: FilledButton.styleFrom(
+                  backgroundColor: vivaDanger, foregroundColor: Colors.white),
+              onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const EmergencyContactsScreen())),
               icon: const Icon(Icons.phone),
               label: const Text('Emergência'),
             ),
@@ -48,10 +52,22 @@ class _HomeShellState extends State<HomeShell> {
         selectedIndex: index,
         onDestinationSelected: (value) => setState(() => index = value),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Início'),
-          NavigationDestination(icon: Icon(Icons.calendar_month_outlined), selectedIcon: Icon(Icons.calendar_month), label: 'Agenda'),
-          NavigationDestination(icon: Icon(Icons.favorite_outline), selectedIcon: Icon(Icons.favorite), label: 'Assistente'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Perfil'),
+          NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Início'),
+          NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon: Icon(Icons.calendar_month),
+              label: 'Agenda'),
+          NavigationDestination(
+              icon: Icon(Icons.favorite_outline),
+              selectedIcon: Icon(Icons.favorite),
+              label: 'Assistente'),
+          NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Perfil'),
         ],
       ),
     );
