@@ -30,8 +30,9 @@ app:
   # Fuso usado para "hoje", idade e horários da agenda. Sergipe fica em UTC-3, sem horário de verão.
   timezone: ${APP_TIMEZONE:America/Maceio}
   cors:
-    # 5173: web (Vite). 8081: app Flutter rodando no navegador.
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8081}
+    # Em desenvolvimento, libera qualquer porta local (web no Vite e Flutter web).
+    # Em produção, troque pelo endereço real do site, por exemplo https://vivabem50.com.br
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
   jwt:
     # Obrigatório, com pelo menos 32 caracteres. Sem ele, a API não sobe.
     secret: ${JWT_SECRET:}
