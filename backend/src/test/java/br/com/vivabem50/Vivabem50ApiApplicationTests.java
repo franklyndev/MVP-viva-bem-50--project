@@ -1,8 +1,11 @@
 package br.com.vivabem50;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -23,6 +26,22 @@ class Vivabem50ApiApplicationTests extends IntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.paths['/api/auth/login']").exists())
 				.andExpect(jsonPath("$.paths['/api/appointments']").exists());
+	}
+
+	@Test
+	void corsAcceptsAnyLocalPortAndRejectsOtherSites() throws Exception {
+		for (String origin : new String[]{"http://localhost:5173", "http://localhost:9100", "http://127.0.0.1:54321"}) {
+			mockMvc.perform(options("/api/auth/login")
+							.header(HttpHeaders.ORIGIN, origin)
+							.header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
+							.header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "content-type"))
+					.andExpect(status().isOk())
+					.andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, origin));
+		}
+		mockMvc.perform(options("/api/auth/login")
+						.header(HttpHeaders.ORIGIN, "https://site-malicioso.com")
+						.header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST"))
+				.andExpect(status().isForbidden());
 	}
 
 }
