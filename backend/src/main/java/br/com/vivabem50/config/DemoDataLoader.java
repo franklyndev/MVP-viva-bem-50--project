@@ -23,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -114,7 +115,7 @@ public class DemoDataLoader implements ApplicationRunner {
         WellbeingLog log = new WellbeingLog();
         log.setUser(user);
         log.setLoggedOn(today);
-        log.setWaterCups(4);
+        log.setWaterLiters(new BigDecimal("1.00"));
         log.setActivityMinutes(20);
         wellbeingLogRepository.save(log);
     }
