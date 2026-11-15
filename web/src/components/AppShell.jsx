@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { CalendarDays, Home, MessageCircleHeart, Phone, User } from 'lucide-react'
 
 const tabs = [
@@ -14,7 +14,7 @@ export function AppShell({ title, children }) {
       <header className="topbar">
         <div className="topbar-inner">
           <span className="brand">VivaBem 50+</span>
-          <a className="sos" href="tel:192"><Phone size={20} aria-hidden /> Emergência</a>
+          <Link className="sos" to="/emergencia"><Phone size={20} aria-hidden /> Emergência</Link>
         </div>
       </header>
       <main className="page">

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { HeartPulse, LogOut, Type, Users } from 'lucide-react'
+import { HeartPulse, LogOut, Users } from 'lucide-react'
 import { AppShell } from '../components/AppShell'
 import { useAuth } from '../auth-context'
 
@@ -24,8 +24,7 @@ export default function Perfil() {
       </div>
       <div style={{ marginTop: 24, display: 'grid', gap: 12 }}>
         <Link className="card row" to="/bem-estar"><HeartPulse color="var(--primary)" aria-hidden /> Bem-Estar e Hábitos</Link>
-        <a className="card row" href="tel:192"><Users color="var(--primary)" aria-hidden /> Contatos de emergência</a>
-        <div className="card row"><Type color="var(--primary)" aria-hidden /> Texto grande já está ativo</div>
+        <Link className="card row" to="/emergencia"><Users color="var(--primary)" aria-hidden /> Contatos de emergência</Link>
         <button type="button" className="card row" style={{ color: 'var(--destructive)', width: '100%', border: '1px solid var(--border)' }} onClick={leave}>
           <LogOut aria-hidden /> Sair
         </button>

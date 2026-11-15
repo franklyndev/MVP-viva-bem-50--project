@@ -6,6 +6,7 @@ import Agenda from './pages/Agenda'
 import Assistente from './pages/Assistente'
 import BemEstar from './pages/BemEstar'
 import Perfil from './pages/Perfil'
+import Emergencia from './pages/Emergencia'
 
 function Private({ children }) {
   const { user } = useAuth()
@@ -28,6 +29,7 @@ export default function App() {
       <Route path="/assistente" element={<Private><Assistente /></Private>} />
       <Route path="/bem-estar" element={<Private><BemEstar /></Private>} />
       <Route path="/perfil" element={<Private><Perfil /></Private>} />
+      <Route path="/emergencia" element={<Private><Emergencia /></Private>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

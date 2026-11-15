@@ -15,12 +15,21 @@ export default function BemEstar() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [waterInput, setWaterInput] = useState('')
+  const [activityGoalInput, setActivityGoalInput] = useState('30')
+
+  function formatLiters(value) {
+    return Number(value).toFixed(2).replace(/\.?0+$/, '').replace('.', ',')
+  }
 
   async function load() {
     setError('')
     setLoading(true)
     try {
-      setData(await getWellbeing())
+      const result = await getWellbeing()
+      setData(result)
+      setWaterInput(formatLiters(result.waterLiters))
+      setActivityGoalInput(String(result.activityGoal))
     } catch (err) {
       setError(err.message)
     } finally {
@@ -31,7 +40,13 @@ export default function BemEstar() {
   useEffect(() => {
     let active = true
     getWellbeing()
-      .then((result) => { if (active) setData(result) })
+      .then((result) => {
+        if (active) {
+          setData(result)
+          setWaterInput(formatLiters(result.waterLiters))
+          setActivityGoalInput(String(result.activityGoal))
+        }
+      })
       .catch((err) => { if (active) setError(err.message) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
@@ -44,11 +59,35 @@ export default function BemEstar() {
     try {
       const next = await updateWellbeing({ date: data.date, ...patch })
       setData(next)
+      if ('waterLiters' in patch || 'waterCups' in patch) setWaterInput(formatLiters(next.waterLiters))
+      if ('activityGoal' in patch) setActivityGoalInput(String(next.activityGoal))
     } catch (err) {
       setError(err.message)
     } finally {
       setSaving(false)
     }
+  }
+
+  function saveWaterInput() {
+    if (!waterInput.trim()) {
+      setError('Informe quantos litros você tomou hoje.')
+      return
+    }
+    const liters = Number(waterInput.replace(',', '.'))
+    if (!Number.isFinite(liters) || liters < 0 || liters > 20) {
+      setError('Informe um valor entre 0 e 20 litros.')
+      return
+    }
+    save({ waterLiters: Number(liters.toFixed(2)) })
+  }
+
+  function saveActivityGoal() {
+    const goal = Number(activityGoalInput)
+    if (!Number.isInteger(goal) || goal < 1 || goal > 600) {
+      setError('Informe uma meta entre 1 e 600 minutos.')
+      return
+    }
+    save({ activityGoal: goal })
   }
 
   if (loading && !data) return <AppShell title="Bem-Estar"><p>Carregando hábitos…</p></AppShell>
@@ -66,13 +105,19 @@ export default function BemEstar() {
       <div style={{ marginTop: 20, display: 'grid', gap: 16 }}>
         <section className="card" style={{ padding: 20 }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Droplet color="var(--primary)" aria-hidden /> Hidratação</h2>
-          <p style={{ margin: '8px 0', fontSize: '1.125rem' }}><b>{data.waterCups}</b> de {data.waterGoal} copos</p>
-          <div className="progress" role="progressbar" aria-valuenow={data.waterCups} aria-valuemax={data.waterGoal}>
-            <span style={{ width: `${Math.min(100, (data.waterCups / data.waterGoal) * 100)}%` }} />
+          <p style={{ margin: '8px 0', fontSize: '1.125rem' }}><b>{formatLiters(data.waterLiters)}</b> de {formatLiters(data.waterGoalLiters)} L hoje</p>
+          <div className="progress" role="progressbar" aria-valuenow={data.waterLiters} aria-valuemax={data.waterGoalLiters}>
+            <span style={{ width: `${Math.min(100, (data.waterLiters / data.waterGoalLiters) * 100)}%` }} />
           </div>
-          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-            <button type="button" className="step" aria-label="Menos um copo" disabled={saving || data.waterCups <= 0} onClick={() => save({ waterCups: Math.max(0, data.waterCups - 1) })}><Minus /></button>
-            <button type="button" className="btn btn-primary" style={{ flex: 1 }} disabled={saving || data.waterCups >= 30} onClick={() => save({ waterCups: Math.min(30, data.waterCups + 1) })}>+ Bebi um copo</button>
+          <div className="field" style={{ marginTop: 16 }}>
+            <label htmlFor="water-liters">Litros tomados hoje</label>
+            <input id="water-liters" type="text" inputMode="decimal" value={waterInput} disabled={saving} onChange={(event) => setWaterInput(event.target.value)} />
+          </div>
+          <button type="button" className="btn btn-primary" style={{ marginTop: 12 }} disabled={saving} onClick={saveWaterInput}>{saving ? 'Salvando…' : 'Salvar hidratação'}</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+            <button type="button" className="step" aria-label="Diminuir 0,25 litro" disabled={saving || data.waterLiters <= 0} onClick={() => save({ waterLiters: Math.max(0, Number((data.waterLiters - 0.25).toFixed(2))) })}><Minus /></button>
+            <span>Ajustar em 0,25 L</span>
+            <button type="button" className="step" aria-label="Adicionar 0,25 litro" disabled={saving || data.waterLiters >= 20} onClick={() => save({ waterLiters: Math.min(20, Number((data.waterLiters + 0.25).toFixed(2))) })}><Plus /></button>
           </div>
         </section>
         <section className="card" style={{ padding: 20 }}>
@@ -81,6 +126,11 @@ export default function BemEstar() {
           <div className="progress" role="progressbar" aria-valuenow={data.activityMinutes} aria-valuemax={data.activityGoal}>
             <span style={{ width: `${Math.min(100, (data.activityMinutes / data.activityGoal) * 100)}%` }} />
           </div>
+          <div className="field" style={{ marginTop: 16 }}>
+            <label htmlFor="activity-goal">Sua meta diária em minutos</label>
+            <input id="activity-goal" type="number" min="1" max="600" step="1" value={activityGoalInput} disabled={saving} onChange={(event) => setActivityGoalInput(event.target.value)} />
+          </div>
+          <button type="button" className="btn btn-outline" style={{ marginTop: 12 }} disabled={saving} onClick={saveActivityGoal}>{saving ? 'Salvando…' : 'Salvar meta de atividade'}</button>
           <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
             <button type="button" className="step" aria-label="Menos 5 minutos" disabled={saving || data.activityMinutes <= 0} onClick={() => save({ activityMinutes: Math.max(0, data.activityMinutes - 5) })}><Minus /></button>
             <button type="button" className="step" aria-label="Mais 5 minutos" disabled={saving || data.activityMinutes >= 600} onClick={() => save({ activityMinutes: Math.min(600, data.activityMinutes + 5) })}><Plus /></button>
