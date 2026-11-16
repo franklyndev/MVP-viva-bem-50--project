@@ -87,6 +87,14 @@ export function createAppointment(payload) {
   return request('/api/appointments', { method: 'POST', body: JSON.stringify(payload) })
 }
 
+export function getAppointment(id) {
+  return request(`/api/appointments/${id}`)
+}
+
+export function updateAppointment(id, payload) {
+  return request(`/api/appointments/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+}
+
 export function deleteAppointment(id) {
   return request(`/api/appointments/${id}`, { method: 'DELETE' })
 }
@@ -100,8 +108,9 @@ export function updateWellbeing(payload) {
   return request('/api/wellbeing', { method: 'PUT', body: JSON.stringify(payload) })
 }
 
-export function chat(message) {
-  return request('/api/ai/chat', { method: 'POST', body: JSON.stringify({ message }) })
+// history: falas anteriores [{ role: 'user' | 'assistant', content }], da mais antiga para a mais recente.
+export function chat(message, history = []) {
+  return request('/api/ai/chat', { method: 'POST', body: JSON.stringify({ message, history }) })
 }
 
 export async function getHealth() {

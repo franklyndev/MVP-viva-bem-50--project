@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme.dart';
 import '../widgets/confirm_delete.dart';
+import '../widgets/edit_appointment_sheet.dart';
 import 'bem_estar_screen.dart';
 
 class InicioScreen extends StatefulWidget {
@@ -38,7 +39,7 @@ class _InicioScreenState extends State<InicioScreen> {
       final dates = List.generate(
           7,
           (index) => DateTime(today.year, today.month, today.day)
-              .subtract(Duration(days: index)));
+              .add(Duration(days: index)));
       final results = await Future.wait(dates.map((day) async {
         final key = iso(day);
         try {
@@ -80,9 +81,11 @@ class _InicioScreenState extends State<InicioScreen> {
     final dateText =
         '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}';
     if (iso(date) == iso(today)) return 'Hoje · $dateText';
-    if (iso(date) == iso(today.subtract(const Duration(days: 1))))
-      return 'Ontem · $dateText';
-    return '${weekdays[date.weekday % 7]} · $dateText';
+    if (iso(date) == iso(today.add(const Duration(days: 1)))) {
+      return 'Amanhã · $dateText';
+    }
+    final weekday = weekdays[date.weekday % 7];
+    return '${weekday[0].toUpperCase()}${weekday.substring(1)} · $dateText';
   }
 
   Future<void> toggle(Map<String, dynamic> item, bool done, String date) async {
@@ -123,6 +126,13 @@ class _InicioScreenState extends State<InicioScreen> {
     }
   }
 
+  Future<void> edit(Map<String, dynamic> item) async {
+    if (saving) return;
+    final saved = await showEditAppointmentSheet(
+        context, widget.api, (item['sourceId'] as num).toInt());
+    if (saved) await load();
+  }
+
   bool hasAppointment(Map<String, dynamic>? agenda) =>
       ((agenda?['items'] as List?) ?? [])
           .any((item) => item['source'] == 'APPOINTMENT');
@@ -157,16 +167,31 @@ class _InicioScreenState extends State<InicioScreen> {
     final user = data!['user'] as Map<String, dynamic>;
     final items = (data!['items'] as List).cast<Map<String, dynamic>>();
     final wellbeing = data!['wellbeing'] as Map<String, dynamic>;
-    final next = data!['nextAppointment'] as Map<String, dynamic>?;
+    final todayNext = data!['nextAppointment'] as Map<String, dynamic>?;
     final pending = items.where((item) => item['done'] != true).length;
     final first = (user['name'] as String).split(' ').first;
     final today = DateTime.now();
     final timelineDates = List.generate(
             7,
             (index) => DateTime(today.year, today.month, today.day)
-                .subtract(Duration(days: index)))
+                .add(Duration(days: index)))
         .where((day) => hasAppointment(agendasByDay[iso(day)]))
         .toList();
+    // Próximo compromisso: o de hoje ainda não feito ou, se não houver, o primeiro dos próximos dias.
+    Map<String, dynamic>? next = todayNext;
+    String nextWhen = '';
+    if (next == null) {
+      for (final day in timelineDates.where((d) => iso(d) != iso(today))) {
+        final pending = (agendasByDay[iso(day)]!['items'] as List)
+            .cast<Map<String, dynamic>>()
+            .where((item) => item['source'] == 'APPOINTMENT' && item['done'] != true);
+        if (pending.isNotEmpty) {
+          next = pending.first;
+          nextWhen = '${dayLabel(day, today).split(' · ').first} · ';
+          break;
+        }
+      }
+    }
 
     return RefreshIndicator(
       onRefresh: load,
@@ -199,8 +224,8 @@ class _InicioScreenState extends State<InicioScreen> {
                       color: vivaTeal, borderRadius: BorderRadius.circular(16)),
                   child: Text(
                     next == null
-                        ? 'Nenhuma consulta hoje\nAgenda livre'
-                        : 'Próxima consulta · ${next['time']}\n${next['title']}\n${next['detail'] ?? ''}',
+                        ? 'Nenhum compromisso na semana\nAgenda livre'
+                        : 'Próximo compromisso · $nextWhen${next['time']}\n${next['title']}\n${next['detail'] ?? ''}',
                     style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -228,12 +253,12 @@ class _InicioScreenState extends State<InicioScreen> {
           const SizedBox(height: 20),
           const Text('Linha do tempo',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-          const Text('Acompanhe seus compromissos e atividades dia a dia.'),
+          const Text('Seus compromissos de hoje e dos próximos dias.'),
           const SizedBox(height: 8),
           if (timelineDates.isEmpty)
             const Card(
               child: ListTile(
-                  title: Text('Nenhum lembrete ou consulta nos últimos 7 dias.')),
+                  title: Text('Nenhum lembrete, consulta ou exame nos próximos 7 dias.')),
             ),
           ...timelineDates.map((day) {
             final date = iso(day);
@@ -284,6 +309,14 @@ class _InicioScreenState extends State<InicioScreen> {
                                       ? 'Feito'
                                       : 'Concluir'),
                             ),
+                            if (item['source'] == 'APPOINTMENT')
+                              IconButton(
+                                tooltip: 'Editar',
+                                iconSize: 28,
+                                color: vivaTeal,
+                                onPressed: saving ? null : () => edit(item),
+                                icon: const Icon(Icons.edit_outlined),
+                              ),
                             if (item['source'] == 'APPOINTMENT')
                               IconButton(
                                 tooltip: 'Excluir',

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, ChevronRight, Droplet, Footprints, Pill, Stethoscope, Trash2, Utensils } from 'lucide-react'
+import { Check, ChevronRight, Droplet, Footprints, Pencil, Pill, Stethoscope, Trash2, Utensils } from 'lucide-react'
 import { AppShell } from '../components/AppShell'
+import { EditAppointment } from '../components/EditAppointment'
 import { completeItem, deleteAppointment, getAgenda } from '../services/api'
 
 const icons = {
@@ -29,21 +30,25 @@ function isoDate(date) {
   return copy.toISOString().slice(0, 10)
 }
 
-function recentDates() {
+// Hoje e os próximos 6 dias, para mostrar o que a pessoa tem marcado na semana.
+function weekDates() {
   const today = new Date()
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(today)
-    date.setDate(today.getDate() - index)
+    date.setDate(today.getDate() + index)
     return isoDate(date)
   })
 }
 
 function dateLabel(date, today) {
-  if (date === today) return `Hoje · ${new Date(`${date}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
-  const yesterday = new Date(`${today}T12:00:00`)
-  yesterday.setDate(yesterday.getDate() - 1)
-  if (date === isoDate(yesterday)) return `Ontem · ${new Date(`${date}T12:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`
-  return new Date(`${date}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
+  const day = new Date(`${date}T12:00:00`)
+  const short = day.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+  if (date === today) return `Hoje · ${short}`
+  const tomorrow = new Date(`${today}T12:00:00`)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  if (date === isoDate(tomorrow)) return `Amanhã · ${short}`
+  const weekday = day.toLocaleDateString('pt-BR', { weekday: 'long' })
+  return `${weekday[0].toUpperCase()}${weekday.slice(1)} · ${short}`
 }
 
 function hasAppointment(agenda) {
@@ -60,12 +65,13 @@ export default function Inicio() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [editingId, setEditingId] = useState(null)
 
   const load = useCallback(async () => {
     setError('')
     setLoading(true)
     try {
-      const dates = recentDates()
+      const dates = weekDates()
       const agendas = await Promise.all(dates.map(async (date) => {
         try {
           return await getAgenda(date)
@@ -126,10 +132,16 @@ export default function Inicio() {
   )
 
   const pending = data.items.filter((item) => !item.done).length
-  const next = data.nextAppointment
-  const dates = recentDates()
+  const dates = weekDates()
   const today = dates[0]
   const daysWithAppointments = dates.filter((date) => hasAppointment(agendasByDate[date]))
+  // Próximo compromisso: o de hoje ainda não feito ou, se não houver, o primeiro dos próximos dias.
+  const nextDay = data.nextAppointment ? today : daysWithAppointments.find((date) => date !== today
+    && agendasByDate[date].items.some((item) => item.source === 'APPOINTMENT' && !item.done))
+  const next = data.nextAppointment ?? (nextDay
+    ? agendasByDate[nextDay].items.find((item) => item.source === 'APPOINTMENT' && !item.done)
+    : null)
+  const nextWhen = nextDay && nextDay !== today ? `${dateLabel(nextDay, today).split(' · ')[0]} · ` : ''
 
   return (
     <AppShell title="Início">
@@ -140,9 +152,9 @@ export default function Inicio() {
       <h2 style={{ marginTop: 28 }}>Resumo do dia</h2>
       <div className="scroll-row">
         <div className="scroll-card hero-card">
-          <p style={{ fontWeight: 600, opacity: 0.9 }}>{next ? `Próxima consulta · ${next.time}` : 'Nenhuma consulta hoje'}</p>
+          <p style={{ fontWeight: 600, opacity: 0.9 }}>{next ? `Próximo compromisso · ${nextWhen}${next.time}` : 'Nenhum compromisso na semana'}</p>
           <p style={{ marginTop: 4, fontSize: '1.5rem', fontWeight: 800 }}>{next ? next.title : 'Agenda livre'}</p>
-          <p style={{ opacity: 0.9 }}>{next?.detail || 'Quando marcar, aparece aqui.'}</p>
+          <p style={{ opacity: 0.9 }}>{next ? next.detail : 'Quando marcar, aparece aqui.'}</p>
         </div>
         <Link to="/bem-estar" className="scroll-card card">
           <p className="item-kind"><Droplet size={20} aria-hidden /> Hidratação</p>
@@ -152,10 +164,10 @@ export default function Inicio() {
       </div>
 
       <h2 style={{ marginTop: 28 }}>Linha do tempo</h2>
-      <p className="muted">Acompanhe seus compromissos e atividades dia a dia.</p>
+      <p className="muted">Seus compromissos de hoje e dos próximos dias.</p>
       <div style={{ marginTop: 12, display: 'grid', gap: 12 }}>
         {daysWithAppointments.length === 0 && (
-          <p className="card muted" style={{ padding: 16 }}>Nenhum lembrete ou consulta nos últimos 7 dias.</p>
+          <p className="card muted" style={{ padding: 16 }}>Nenhum lembrete, consulta ou exame nos próximos 7 dias.</p>
         )}
         {daysWithAppointments.map((date, index) => {
           const items = agendasByDate[date].items
@@ -181,9 +193,14 @@ export default function Inicio() {
                             <Check size={24} aria-hidden /><span>{saving ? 'Salvando…' : item.done ? 'Feito' : 'Concluir'}</span>
                           </button>
                           {item.source === 'APPOINTMENT' && (
-                            <button type="button" className="delete-btn" disabled={saving} onClick={() => remove(item)} aria-label={`Excluir ${item.title}`}>
-                              <Trash2 size={22} aria-hidden /><span>Excluir</span>
-                            </button>
+                            <>
+                              <button type="button" className="edit-btn" disabled={saving} onClick={() => setEditingId(item.sourceId)} aria-label={`Editar ${item.title}`}>
+                                <Pencil size={22} aria-hidden /><span>Editar</span>
+                              </button>
+                              <button type="button" className="delete-btn" disabled={saving} onClick={() => remove(item)} aria-label={`Excluir ${item.title}`}>
+                                <Trash2 size={22} aria-hidden /><span>Excluir</span>
+                              </button>
+                            </>
                           )}
                         </div>
                       </li>
@@ -194,6 +211,7 @@ export default function Inicio() {
           )
         })}
       </div>
+      {editingId && <EditAppointment id={editingId} onClose={() => setEditingId(null)} onSaved={load} />}
     </AppShell>
   )
 }

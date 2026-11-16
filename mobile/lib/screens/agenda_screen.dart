@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme.dart';
 import '../widgets/confirm_delete.dart';
+import '../widgets/edit_appointment_sheet.dart';
 
 class AgendaScreen extends StatefulWidget {
   const AgendaScreen({super.key, required this.api});
@@ -76,6 +77,12 @@ class _AgendaScreenState extends State<AgendaScreen> {
     }
   }
 
+  Future<void> edit(Map<String, dynamic> item) async {
+    if (saving) return;
+    final saved = await showEditAppointmentSheet(context, widget.api, (item['sourceId'] as num).toInt());
+    if (saved) await load();
+  }
+
   Future<void> add() async {
     if (saving) return;
     if (title.text.trim().isEmpty) {
@@ -145,12 +152,24 @@ class _AgendaScreenState extends State<AgendaScreen> {
                 title: Text(item['title'] as String),
                 subtitle: Text('${item['kind']} · ${item['detail'] ?? ''}'),
                 trailing: item['source'] == 'APPOINTMENT'
-                    ? IconButton(
-                        tooltip: 'Excluir',
-                        iconSize: 28,
-                        color: vivaDanger,
-                        onPressed: saving ? null : () => remove(item),
-                        icon: const Icon(Icons.delete_outline),
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: 'Editar',
+                            iconSize: 28,
+                            color: vivaTeal,
+                            onPressed: saving ? null : () => edit(item),
+                            icon: const Icon(Icons.edit_outlined),
+                          ),
+                          IconButton(
+                            tooltip: 'Excluir',
+                            iconSize: 28,
+                            color: vivaDanger,
+                            onPressed: saving ? null : () => remove(item),
+                            icon: const Icon(Icons.delete_outline),
+                          ),
+                        ],
                       )
                     : null,
               ),

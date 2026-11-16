@@ -94,6 +94,14 @@ class ApiService {
     return _json('POST', '/api/appointments', payload: payload);
   }
 
+  Future<Map<String, dynamic>> appointment(int id) {
+    return _json('GET', '/api/appointments/$id');
+  }
+
+  Future<Map<String, dynamic>> updateAppointment(int id, Map<String, dynamic> payload) {
+    return _json('PUT', '/api/appointments/$id', payload: payload);
+  }
+
   Future<void> deleteAppointment(int id) async {
     await _json('DELETE', '/api/appointments/$id');
   }
@@ -107,8 +115,9 @@ class ApiService {
     return _json('PUT', '/api/wellbeing', payload: payload);
   }
 
-  Future<String> chat(String message) async {
-    final body = await _json('POST', '/api/ai/chat', payload: {'message': message});
+  /// history: falas anteriores ({'role': 'user' | 'assistant', 'content': ...}), da mais antiga para a mais recente.
+  Future<String> chat(String message, {List<Map<String, String>> history = const []}) async {
+    final body = await _json('POST', '/api/ai/chat', payload: {'message': message, 'history': history});
     return body['reply'] as String;
   }
 

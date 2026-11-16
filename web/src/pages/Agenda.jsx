@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { AppShell, BigButton } from '../components/AppShell'
+import { EditAppointment } from '../components/EditAppointment'
 import { createAppointment, deleteAppointment, getAgenda } from '../services/api'
 
 const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -24,6 +25,7 @@ export default function Agenda() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState({ title: '', type: 'CONSULTA', time: '10:00', location: '', notes: '' })
 
   const selectedDate = isoDate(week[sel])
@@ -126,9 +128,14 @@ export default function Agenda() {
                   <p className="muted">{item.kind}{item.detail ? ` · ${item.detail}` : ''}</p>
                 </div>
                 {item.source === 'APPOINTMENT' && (
-                  <button type="button" className="delete-btn" disabled={saving} onClick={() => remove(item)} aria-label={`Excluir ${item.title}`}>
-                    <Trash2 size={22} aria-hidden /><span>Excluir</span>
-                  </button>
+                  <div className="item-actions">
+                    <button type="button" className="edit-btn" disabled={saving} onClick={() => setEditingId(item.sourceId)} aria-label={`Editar ${item.title}`}>
+                      <Pencil size={22} aria-hidden /><span>Editar</span>
+                    </button>
+                    <button type="button" className="delete-btn" disabled={saving} onClick={() => remove(item)} aria-label={`Excluir ${item.title}`}>
+                      <Trash2 size={22} aria-hidden /><span>Excluir</span>
+                    </button>
+                  </div>
                 )}
               </li>
             ))}
@@ -169,6 +176,7 @@ export default function Agenda() {
           <BigButton type="submit" disabled={saving}>{saving ? 'Salvando…' : 'Salvar no banco'}</BigButton>
         </form>
       )}
+      {editingId && <EditAppointment id={editingId} onClose={() => setEditingId(null)} onSaved={() => load(selectedDate)} />}
     </AppShell>
   )
 }
