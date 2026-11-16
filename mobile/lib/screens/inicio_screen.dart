@@ -278,53 +278,83 @@ class _InicioScreenState extends State<InicioScreen> {
                   ...dayItems.map((item) {
                       final done = item['done'] == true;
                       final detail = (item['detail'] as String?) ?? '';
-                      return ListTile(
-                        leading: Text(item['time'] as String,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w800, fontSize: 16)),
-                        title: Text(item['title'] as String,
-                            style: TextStyle(
-                                decoration:
-                                    done ? TextDecoration.lineThrough : null)),
-                        subtitle: Text(detail.isEmpty
-                            ? item['kind'] as String
-                            : '${item['kind']} · $detail'),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      // Duas linhas: horário e título com a largura toda; os botões embaixo.
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            FilledButton(
-                              style: FilledButton.styleFrom(
-                                  backgroundColor:
-                                      done ? vivaSuccess : Colors.white,
-                                  foregroundColor:
-                                      done ? Colors.white : vivaSuccess,
-                                  side: const BorderSide(
-                                      color: vivaSuccess, width: 2)),
-                              onPressed: saving
-                                  ? null
-                                  : () => toggle(item, done, date),
-                              child: Text(saving
-                                  ? 'Salvando…'
-                                  : done
-                                      ? 'Feito'
-                                      : 'Concluir'),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: 64,
+                                  child: Text(item['time'] as String,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 16)),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(item['title'] as String,
+                                          style: TextStyle(
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w700,
+                                              decoration: done
+                                                  ? TextDecoration.lineThrough
+                                                  : null)),
+                                      Text(detail.isEmpty
+                                          ? item['kind'] as String
+                                          : '${item['kind']} · $detail'),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            if (item['source'] == 'APPOINTMENT')
-                              IconButton(
-                                tooltip: 'Editar',
-                                iconSize: 28,
-                                color: vivaTeal,
-                                onPressed: saving ? null : () => edit(item),
-                                icon: const Icon(Icons.edit_outlined),
-                              ),
-                            if (item['source'] == 'APPOINTMENT')
-                              IconButton(
-                                tooltip: 'Excluir',
-                                iconSize: 28,
-                                color: vivaDanger,
-                                onPressed: saving ? null : () => remove(item),
-                                icon: const Icon(Icons.delete_outline),
-                              ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                FilledButton(
+                                  style: FilledButton.styleFrom(
+                                      backgroundColor:
+                                          done ? vivaSuccess : Colors.white,
+                                      foregroundColor:
+                                          done ? Colors.white : vivaSuccess,
+                                      side: const BorderSide(
+                                          color: vivaSuccess, width: 2)),
+                                  onPressed: saving
+                                      ? null
+                                      : () => toggle(item, done, date),
+                                  child: Text(saving
+                                      ? 'Salvando…'
+                                      : done
+                                          ? 'Feito'
+                                          : 'Concluir'),
+                                ),
+                                if (item['source'] == 'APPOINTMENT')
+                                  IconButton(
+                                    tooltip: 'Editar',
+                                    iconSize: 28,
+                                    color: vivaTeal,
+                                    onPressed:
+                                        saving ? null : () => edit(item),
+                                    icon: const Icon(Icons.edit_outlined),
+                                  ),
+                                if (item['source'] == 'APPOINTMENT')
+                                  IconButton(
+                                    tooltip: 'Excluir',
+                                    iconSize: 28,
+                                    color: vivaDanger,
+                                    onPressed:
+                                        saving ? null : () => remove(item),
+                                    icon: const Icon(Icons.delete_outline),
+                                  ),
+                              ],
+                            ),
                           ],
                         ),
                       );
