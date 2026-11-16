@@ -1,50 +1,73 @@
 package br.com.vivabem50.service;
 
 import br.com.vivabem50.dto.agenda.DayAgendaResponse;
+import br.com.vivabem50.dto.ai.ChatRequest;
 import br.com.vivabem50.dto.ai.ChatResponse;
 import br.com.vivabem50.model.AiInteraction;
 import br.com.vivabem50.model.enums.AiUseCase;
 import br.com.vivabem50.repository.AiInteractionRepository;
 import br.com.vivabem50.repository.UserRepository;
+import br.com.vivabem50.service.ai.GeminiAssistant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
 
 import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
- * Assistente do MVP baseado em regras sobre a agenda do dia. Ainda não usa um LLM:
- * a integração com o modelo generativo entra na Release 2, por trás deste mesmo endpoint.
+ * Assistente do app. Com GEMINI_API_KEY configurada, responde com o LLM (Google Gemini), que também
+ * cria, conclui e exclui itens da agenda. Sem a chave, como nos testes, usa respostas por regras
+ * sobre a agenda do dia.
  */
 @Service
 public class AiChatService {
+
+    private static final Logger log = LoggerFactory.getLogger(AiChatService.class);
+    private static final String RULES_MODEL = "regras-mvp";
 
     private final AgendaService agendaService;
     private final AiInteractionRepository aiInteractionRepository;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final GeminiAssistant llm;
 
     public AiChatService(AgendaService agendaService, AiInteractionRepository aiInteractionRepository,
-                         UserRepository userRepository, UserMapper userMapper) {
+                         UserRepository userRepository, UserMapper userMapper, GeminiAssistant llm) {
         this.agendaService = agendaService;
         this.aiInteractionRepository = aiInteractionRepository;
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.llm = llm;
     }
 
-    @Transactional
-    public ChatResponse reply(Long userId, String message) {
+    // Sem @Transactional: a chamada ao LLM é lenta, e cada ação da agenda já abre a própria transação.
+    public ChatResponse reply(Long userId, ChatRequest request) {
         DayAgendaResponse day = agendaService.day(userId, userMapper.today());
-        String reply = buildReply(message.toLowerCase(Locale.ROOT), day);
+        if (!llm.enabled()) {
+            record(userId, RULES_MODEL, true);
+            return new ChatResponse(buildReply(request.message().toLowerCase(Locale.ROOT), day), false);
+        }
+        try {
+            GeminiAssistant.Reply reply = llm.reply(userId, day.user().name(), request.message(),
+                    request.historyOrEmpty());
+            record(userId, llm.model(), !reply.refused());
+            return new ChatResponse(reply.text(), reply.changedData());
+        } catch (RestClientException e) {
+            log.warn("Falha ao chamar o LLM: {}", e.getMessage());
+            record(userId, llm.model(), false);
+            return new ChatResponse("Não consegui falar com a assistente agora. Tente de novo em instantes.", false);
+        }
+    }
 
+    private void record(Long userId, String modelName, boolean valid) {
         AiInteraction interaction = new AiInteraction();
         interaction.setUser(userRepository.getReferenceById(userId));
         interaction.setUseCase(AiUseCase.ANALISE_AGENDA);
-        interaction.setModelName("regras-mvp");
-        interaction.setResponseValid(true);
+        interaction.setModelName(modelName);
+        interaction.setResponseValid(valid);
         aiInteractionRepository.save(interaction);
-
-        return new ChatResponse(reply);
     }
 
     private static String buildReply(String message, DayAgendaResponse day) {

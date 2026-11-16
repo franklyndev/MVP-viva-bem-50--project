@@ -22,7 +22,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "app.jwt.secret=chave-usada-apenas-nos-testes-automatizados-0123456789",
         "app.demo.enabled=true",
         "app.demo.email=" + IntegrationTest.DEMO_EMAIL,
-        "app.demo.password=" + IntegrationTest.DEMO_PASSWORD
+        "app.demo.password=" + IntegrationTest.DEMO_PASSWORD,
+        // Os testes nunca chamam o LLM de verdade, mesmo com GEMINI_API_KEY no .env.
+        "app.ai.api-key="
 })
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)

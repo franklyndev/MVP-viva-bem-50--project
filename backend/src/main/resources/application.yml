@@ -37,6 +37,10 @@ app:
     # Obrigatório, com pelo menos 32 caracteres. Sem ele, a API não sobe.
     secret: ${JWT_SECRET:}
     expiration: ${JWT_EXPIRATION:PT12H}
+  ai:
+    # Sem chave, a assistente responde por regras (como nos testes).
+    api-key: ${GEMINI_API_KEY:}
+    model: ${AI_MODEL:gemini-3.5-flash-lite}
   demo:
     # Cria a usuária de demonstração ao iniciar. Use só em desenvolvimento e na apresentação.
     enabled: ${DEMO_DATA_ENABLED:false}

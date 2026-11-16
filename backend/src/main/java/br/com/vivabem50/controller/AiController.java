@@ -26,8 +26,8 @@ public class AiController {
     }
 
     @PostMapping("/chat")
-    @Operation(summary = "Responde uma mensagem do usuário com base na agenda do dia")
+    @Operation(summary = "Conversa com a assistente, que responde dúvidas de bem-estar e consulta ou altera a agenda")
     public ChatResponse chat(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ChatRequest request) {
-        return aiChatService.reply(AuthenticatedUser.id(jwt), request.message());
+        return aiChatService.reply(AuthenticatedUser.id(jwt), request);
     }
 }

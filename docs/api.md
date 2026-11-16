@@ -55,7 +55,7 @@ Todos os erros têm o mesmo formato. Mostre `detail` ao usuário e, em erros de 
 | `POST` | `/api/agenda/complete` | Sim | `204` |
 | `GET` | `/api/wellbeing` | Sim | `200` com o bem-estar do dia |
 | `PUT` | `/api/wellbeing` | Sim | `200` com o bem-estar do dia |
-| `POST` | `/api/ai/chat` | Sim | `200` com a resposta do assistente |
+| `POST` | `/api/ai/chat` | Sim | `200` com a resposta da assistente com IA |
 
 ## Autenticação
 
@@ -276,14 +276,27 @@ As respostas incluem `waterLiters` e `waterGoalLiters`. Os campos `waterCups` e 
 
 ### `POST /api/ai/chat`
 
+A Vivi responde dúvidas básicas de saúde e bem-estar e executa pedidos na agenda da pessoa logada: diz a data de hoje, lista lembretes e consultas, cria, conclui e exclui compromissos e registra água, atividade e humor.
+
 ```json
-{ "message": "Quero marcar uma consulta" }
+{
+  "message": "sim, pode marcar",
+  "history": [
+    { "role": "user", "content": "Me lembra de tomar o remédio amanhã às 8h" },
+    { "role": "assistant", "content": "Quer que eu crie o lembrete \"Tomar remédio\" para amanhã, 16/11, às 8h?" }
+  ]
+}
 ```
+
+- `message`: até 500 caracteres.
+- `history` (opcional): até 20 falas anteriores, da mais antiga para a mais recente, sem a mensagem atual. `role` é `user` ou `assistant`; cada `content` tem até 2000 caracteres. Sem o histórico, a Vivi não entende respostas como "sim".
 
 Resposta:
 
 ```json
-{ "reply": "Olá, Maria! Você já tem Consulta – Dra. Helena às 15:00. Para marcar outro compromisso, abra Minha Agenda e toque em Adicionar lembrete." }
+{ "reply": "Pronto! Criei o lembrete \"Tomar remédio\" para domingo, 16/11, às 8h.", "agendaChanged": true }
 ```
 
-`message`: até 500 caracteres. Hoje as respostas seguem regras sobre a agenda do dia; a integração com o LLM entra na Release 2 sem mudar este contrato.
+`agendaChanged` é `true` quando a Vivi criou, concluiu ou excluiu algo, ou alterou o bem-estar. Use para recarregar a agenda.
+
+**Como funciona:** com `GEMINI_API_KEY` no `.env`, a API usa o Google Gemini, no modelo definido em `AI_MODEL` (padrão `gemini-3.5-flash-lite`, que responde em cerca de 1 segundo), com *function calling*. A IA só acessa os dados da pessoa logada, por meio das mesmas regras das rotas acima: um pedido inválido volta para ela como erro, e ela explica o problema. A Vivi não faz diagnóstico nem indica remédios, e orienta ligar para o SAMU (192) em sinais de emergência. Sem a chave, como nos testes automáticos, as respostas seguem regras sobre a agenda do dia e nada é alterado. Se o serviço da IA falhar, a resposta é `200` com uma mensagem pedindo para tentar de novo.
