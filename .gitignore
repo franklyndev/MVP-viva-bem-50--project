@@ -4,7 +4,12 @@
 !.env.example
 
 # Editores e sistema
+.vscode/
 .idea/
 *.iml
 .DS_Store
 Thumbs.db
+
+# Relatórios de travamento da JVM (Gradle sem memória)
+hs_err_pid*.log
+replay_pid*.log

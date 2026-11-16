@@ -27,5 +27,26 @@ server:
     include-stacktrace: never
 
 app:
+  # Fuso usado para "hoje", idade e horários da agenda. Sergipe fica em UTC-3, sem horário de verão.
+  timezone: ${APP_TIMEZONE:America/Maceio}
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    # Em desenvolvimento, libera qualquer porta local (web no Vite e Flutter web).
+    # Em produção, troque pelo endereço real do site, por exemplo https://vivabem50.com.br
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+  jwt:
+    # Obrigatório, com pelo menos 32 caracteres. Sem ele, a API não sobe.
+    secret: ${JWT_SECRET:}
+    expiration: ${JWT_EXPIRATION:PT12H}
+  ai:
+    # Sem chave, a assistente responde por regras (como nos testes).
+    api-key: ${GEMINI_API_KEY:}
+    model: ${AI_MODEL:gemini-3.5-flash-lite}
+  demo:
+    # Cria a usuária de demonstração ao iniciar. Use só em desenvolvimento e na apresentação.
+    enabled: ${DEMO_DATA_ENABLED:false}
+    email: ${DEMO_USER_EMAIL:maria@vivabem50.com}
+    password: ${DEMO_USER_PASSWORD:vivabem50}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

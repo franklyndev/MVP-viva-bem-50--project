@@ -2,22 +2,16 @@ package br.com.vivabem50;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Confere as regras de integridade que ficam no próprio banco. */
-@SpringBootTest
-@Import(TestcontainersConfiguration.class)
-@Testcontainers(disabledWithoutDocker = true)
 @Transactional
-class SchemaConstraintsTests {
+class SchemaConstraintsTests extends IntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbc;
