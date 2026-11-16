@@ -4,7 +4,15 @@ import { AppShell } from '../components/AppShell'
 import { useAuth } from '../auth-context'
 import { chat } from '../services/api'
 
-const chips = ['Agendar consulta', 'Dica de alimentação', 'Lembrar remédio', 'Exercício leve']
+const chips = ['Que dia é hoje?', 'O que tenho hoje?', 'Lembrar remédio amanhã às 8h', 'Dica de alimentação']
+
+// As últimas falas vão junto para a Vivi entender respostas como "sim, pode marcar".
+function historyFrom(msgs) {
+  return msgs
+    .filter((m) => !m.error)
+    .slice(-10)
+    .map((m) => ({ role: m.from === 'eu' ? 'user' : 'assistant', content: m.text.slice(0, 2000) }))
+}
 
 export default function Assistente() {
   const { user } = useAuth()
@@ -27,13 +35,14 @@ export default function Assistente() {
     }
     setVoiceError('')
     setBusy(true)
+    const history = historyFrom(msgs)
     setMsgs((m) => [...m, { from: 'eu', text: message }])
     setTxt('')
     try {
-      const response = await chat(message)
+      const response = await chat(message, history)
       setMsgs((m) => [...m, { from: 'ia', text: response.reply }])
     } catch (err) {
-      setMsgs((m) => [...m, { from: 'ia', text: err.message }])
+      setMsgs((m) => [...m, { from: 'ia', text: err.message, error: true }])
     } finally {
       setBusy(false)
     }

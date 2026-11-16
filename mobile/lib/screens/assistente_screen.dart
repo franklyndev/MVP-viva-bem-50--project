@@ -13,10 +13,19 @@ class AssistenteScreen extends StatefulWidget {
 
 class _AssistenteScreenState extends State<AssistenteScreen> {
   final text = TextEditingController();
-  final msgs = <({bool me, String text})>[];
+  final msgs = <({bool me, String text, bool error})>[];
   bool busy = false;
 
-  static const chips = ['Agendar consulta', 'Dica de alimentação', 'Lembrar remédio', 'Exercício leve'];
+  static const chips = ['Que dia é hoje?', 'O que tenho hoje?', 'Lembrar remédio amanhã às 8h', 'Dica de alimentação'];
+
+  /// As últimas falas vão junto para a Vivi entender respostas como "sim, pode marcar".
+  List<Map<String, String>> history() {
+    final valid = msgs.where((m) => !m.error).toList();
+    return valid.skip(valid.length > 10 ? valid.length - 10 : 0).map((m) {
+      final content = m.text.length > 2000 ? m.text.substring(0, 2000) : m.text;
+      return {'role': m.me ? 'user' : 'assistant', 'content': content};
+    }).toList();
+  }
 
   @override
   void dispose() {
@@ -30,7 +39,7 @@ class _AssistenteScreenState extends State<AssistenteScreen> {
     widget.api.storedUser().then((user) {
       final name = (user?['name'] as String? ?? '').split(' ').first;
       if (mounted) {
-        setState(() => msgs.add((me: false, text: 'Olá, $name! Sou a Vivi, sua assistente. Como posso ajudar hoje?')));
+        setState(() => msgs.add((me: false, text: 'Olá, $name! Sou a Vivi, sua assistente. Como posso ajudar hoje?', error: false)));
       }
     });
   }
@@ -42,16 +51,17 @@ class _AssistenteScreenState extends State<AssistenteScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A mensagem pode ter até 500 caracteres.')));
       return;
     }
+    final previous = history();
     setState(() {
-      msgs.add((me: true, text: message));
+      msgs.add((me: true, text: message, error: false));
       busy = true;
       text.clear();
     });
     try {
-      final reply = await widget.api.chat(message);
-      if (mounted) setState(() => msgs.add((me: false, text: reply)));
+      final reply = await widget.api.chat(message, history: previous);
+      if (mounted) setState(() => msgs.add((me: false, text: reply, error: false)));
     } catch (e) {
-      if (mounted) setState(() => msgs.add((me: false, text: e.toString())));
+      if (mounted) setState(() => msgs.add((me: false, text: e.toString(), error: true)));
     } finally {
       if (mounted) setState(() => busy = false);
     }
